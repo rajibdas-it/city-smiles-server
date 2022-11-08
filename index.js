@@ -22,13 +22,6 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const servicesCollection = client.db("citySmiles").collection("services");
-    // const service = {
-    //   title: "service One",
-    //   des: "services one",
-    // };
-
-    // const result = await servicesCollection.insertOne(service);
-    // console.log(result);
 
     app.get("/limited-service", async (req, res) => {
       const query = {};
