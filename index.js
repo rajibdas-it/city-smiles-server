@@ -54,8 +54,7 @@ async function run() {
       // console.log(sId);
       const query = { serviceId: sId };
       const cursor = reviewCollection.find(query);
-      const result = await cursor.toArray();
-
+      const result = await cursor.sort({ date: -1 }).toArray();
       res.send({
         success: true,
         result: result,
