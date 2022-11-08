@@ -22,7 +22,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const servicesCollection = client.db("citySmiles").collection("services");
-    const reviewColloection = client.db("citySmiles").collection("review");
+    const reviewCollection = client.db("citySmiles").collection("review");
 
     app.get("/limited-service", async (req, res) => {
       const query = {};
@@ -46,8 +46,20 @@ async function run() {
     });
     app.post("/reviews", async (req, res) => {
       const review = req.body;
-      const result = await reviewColloection.insertOne(review);
-      console.log(result);
+      const result = await reviewCollection.insertOne(review);
+      res.send(result);
+    });
+    app.get("/all-reviews", async (req, res) => {
+      const sId = req.query.sId;
+      // console.log(sId);
+      const query = { serviceId: sId };
+      const cursor = reviewCollection.find(query);
+      const result = await cursor.toArray();
+
+      res.send({
+        success: true,
+        result: result,
+      });
     });
   } finally {
   }
