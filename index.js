@@ -61,9 +61,37 @@ async function run() {
       });
     });
     app.get("/reviews", async (req, res) => {
-      const query = {};
+      const query = { email: req.query.email };
       const cursor = reviewCollection.find(query);
       const result = await cursor.toArray();
+      res.send(result);
+    });
+    app.get("/reviews/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await reviewCollection.findOne(query);
+      res.send(result);
+    });
+    app.patch("/reviews/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      // console.log(id);
+      const newReview = req.body;
+      // console.log(newReview.phone);
+      const updatedDoc = {
+        $set: {
+          phone: newReview.phone,
+          ratings: newReview.ratings,
+          comment: newReview.comment,
+        },
+      };
+      const result = await reviewCollection.updateOne(query, updatedDoc);
+      res.send(result);
+    });
+    app.delete("/reviews/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await reviewCollection.deleteOne(query);
       res.send(result);
     });
   } finally {
