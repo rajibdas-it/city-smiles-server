@@ -24,18 +24,23 @@ async function run() {
     const servicesCollection = client.db("citySmiles").collection("services");
     const reviewCollection = client.db("citySmiles").collection("review");
 
+    app.post("/add-services", async (req, res) => {
+      const service = req.body;
+      const result = await servicesCollection.insertOne(service);
+      res.send(result);
+    });
     app.get("/limited-service", async (req, res) => {
       const query = {};
       const size = parseInt(req.query.size);
       const cursor = servicesCollection.find(query);
-      const result = await cursor.limit(size).toArray();
+      const result = await cursor.limit(size).sort({ date: -1 }).toArray();
       res.send(result);
     });
 
     app.get("/services", async (req, res) => {
       const query = {};
       const cursor = servicesCollection.find(query);
-      const result = await cursor.toArray();
+      const result = await cursor.sort({ date: -1 }).toArray();
       res.send(result);
     });
     app.get("/services/:id", async (req, res) => {
