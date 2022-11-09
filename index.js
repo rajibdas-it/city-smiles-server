@@ -4,6 +4,7 @@ const port = process.env.PORT || 5000;
 const app = express();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
+const jwt = require("jsonwebtoken");
 
 app.use(cors());
 app.use(express.json());
@@ -19,11 +20,46 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 });
 
+function verifyJWT(req, res, next) {
+  // const { authorization } = req.headers.authorization;
+  // console.log("inside verifyJWT function", req.headers);
+  // console.log("inside verifyJWT function", authorization);
+  const authHeader = req.headers["authorization"];
+
+  // console.log("inside verifyJWT function", token);
+  // console.log(authHeader);
+  if (!authHeader) {
+    res.status(401).send({
+      message: "unauthorized access",
+    });
+  }
+  const token = authHeader && authHeader.split(" ")[1];
+  // const token = authHeader.split(" ")[1];
+  // console.log(token);
+  jwt.verify(token, process.env.USER_TOKEN, function (err, decoded) {
+    if (err) {
+      res.status(401).send({
+        message: "invalid Token",
+      });
+      req.decoded = decoded;
+      next();
+    }
+  });
+}
+
 async function run() {
   try {
     const servicesCollection = client.db("citySmiles").collection("services");
     const reviewCollection = client.db("citySmiles").collection("review");
 
+    app.post("/jwt", (req, res) => {
+      const user = req.body;
+      // console.log(user);
+      const token = jwt.sign(user, process.env.USER_TOKEN, {
+        expiresIn: "1h",
+      });
+      res.send({ token });
+    });
     app.post("/add-services", async (req, res) => {
       const service = req.body;
       const result = await servicesCollection.insertOne(service);
@@ -65,7 +101,14 @@ async function run() {
         result: result,
       });
     });
-    app.get("/reviews", async (req, res) => {
+    app.get("/reviews", verifyJWT, async (req, res) => {
+      const decoded = req.decoded;
+      console.log("email after decoded", decoded.email);
+      if (decoded?.email !== req?.query?.email) {
+        res.send({
+          message: "unauthorized access",
+        });
+      }
       const query = { email: req.query.email };
       const cursor = reviewCollection.find(query);
       const result = await cursor.toArray();
@@ -80,9 +123,7 @@ async function run() {
     app.patch("/reviews/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
-      // console.log(id);
       const newReview = req.body;
-      // console.log(newReview.phone);
       const updatedDoc = {
         $set: {
           phone: newReview.phone,
@@ -108,3 +149,5 @@ run().catch((err) => console.log(err));
 app.listen(port, () => {
   console.log("server running on port", port);
 });
+
+module.exports = app;
